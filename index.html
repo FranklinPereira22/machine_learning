@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning na Prática | O Caso do Mercado Livre</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        ml: {
+                            yellow: '#FFE600',
+                            blue: '#2D3277',
+                            darkBlue: '#121640',
+                            accent: '#2968C8',
+                            darkBg: '#090d16',
+                            cardBg: '#111827'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .text-gradient-yellow {
+            background: linear-gradient(135deg, #FFE600 0%, #FFB800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Scroll reveal animation base class */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFE600;
+        }
+    </style>
+</head>
+<body class="bg-ml-darkBg text-slate-200 font-sans antialiased selection:bg-ml-yellow selection:text-ml-darkBlue min-h-screen flex flex-col">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-ml-yellow via-blue-500 to-ml-yellow z-50 transition-all duration-150 w-0"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-40 bg-ml-darkBg/85 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Mercado Livre Brand Logo -->
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+                    <div class="w-11 h-11 rounded-2xl bg-ml-yellow flex items-center justify-center text-ml-darkBlue font-black text-2xl shadow-lg shadow-ml-yellow/20">
+                        <i class="fa-solid fa-handshake-angle text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1">
+                            <span class="font-heading font-extrabold text-lg tracking-tight text-white">MERCADO</span>
+                            <span class="font-heading font-extrabold text-lg tracking-tight text-ml-yellow">LIVRE</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 tracking-wider uppercase block font-semibold">Machine Learning Experience</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="#inicio" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-ml-yellow hover:bg-slate-800/50 transition-all">Início</a>
+                    <a href="#fundamentos" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-ml-yellow hover:bg-slate-800/50 transition-all">O que é ML</a>
+                    <a href="#ecossistema" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-ml-yellow hover:bg-slate-800/50 transition-all">No Mercado Livre</a>
+                    <a href="#simuladores" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-ml-yellow hover:bg-slate-800/50 transition-all">Simuladores</a>
+                    <a href="#impacto" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-ml-yellow hover:bg-slate-800/50 transition-all">Impacto Global</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-slate-300 hover:text-ml-yellow p-2 focus:outline-none">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-ml-cardBg border-b border-slate-800 px-4 pt-2 pb-4 space-y-1">
+            <a href="#inicio" class="mobile-link block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-ml-yellow">Início</a>
+            <a href="#fundamentos" class="mobile-link block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-ml-yellow">O que é ML</a>
+            <a href="#ecossistema" class="mobile-link block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-ml-yellow">No Mercado Livre</a>
+            <a href="#simuladores" class="mobile-link block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-ml-yellow">Simuladores</a>
+            <a href="#impacto" class="mobile-link block px-3 py-2 rounded-md text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-ml-yellow">Impacto Global</a>
+        </div>
+    </nav>
+
+    <!-- SECTION 1: HERO / INÍCIO -->
+    <header id="inicio" class="relative pt-16 pb-24 md:pt-28 md:pb-36 overflow-hidden border-b border-slate-800/80">
+        <!-- Glowing background design elements -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-ml-yellow/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute top-1/3 right-10 w-96 h-96 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left Content -->
+                <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-slate-700 text-xs font-semibold text-ml-yellow shadow-sm">
+                        <i class="fa-solid fa-microchip animate-pulse"></i>
+                        <span>Inteligência Artificial Aplicada ao E-commerce</span>
+                    </div>
+
+                    <h1 class="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                        Como o <span class="text-gradient-yellow">Mercado Livre</span> usa Machine Learning para revolucionar suas compras
+                    </h1>
+
+                    <p class="text-slate-300 text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                        Mergulhe nos bastidores tecnológicos da maior plataforma da América Latina. Descubra como algoritmos inteligentes tomam decisões em milissegundos para personalizar buscas, barrar fraudes e acelerar entregas.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                        <a href="#simuladores" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-ml-yellow text-ml-darkBlue font-bold text-center shadow-lg shadow-ml-yellow/20 hover:bg-yellow-400 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-gamepad"></i>
+                            <span>Testar Simuladores JS</span>
+                        </a>
+                        <a href="#fundamentos" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold text-center transition-all flex items-center justify-center space-x-2">
+                            <span>Explorar Conceitos</span>
+                            <i class="fa-solid fa-arrow-down text-xs"></i>
+                        </a>
+                    </div>
+
+                    <!-- Animated Stats Counter -->
+                    <div class="grid grid-cols-3 gap-4 pt-8 border-t border-slate-800/80">
+                        <div class="text-center lg:text-left">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-white font-heading" id="counter-1">0</div>
+                            <div class="text-xs text-slate-400">Transações protegidas/seg</div>
+                        </div>
+                        <div class="text-center lg:text-left">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-ml-yellow font-heading" id="counter-2">0</div>
+                            <div class="text-xs text-slate-400">Milissegundos na busca</div>
+                        </div>
+                        <div class="text-center lg:text-left">
+                            <div class="text-2xl sm:text-3xl font-extrabold text-white font-heading" id="counter-3">0</div>
+                            <div class="text-xs text-slate-400">Modelos de IA ativos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Visual Element -->
+                <div class="lg:col-span-5 flex justify-center">
+                    <div class="relative w-full max-w-md">
+                        <div class="glass-card rounded-2xl p-6 shadow-2xl relative z-10 border border-slate-700/60 space-y-5">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                </div>
+                                <span class="text-xs font-mono text-slate-400">meli-ai-engine.js</span>
+                            </div>
+
+                            <div class="relative rounded-xl overflow-hidden group">
+                                <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80" alt="Tech Neural Network" class="w-full h-52 object-cover transform group-hover:scale-105 transition-all duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-ml-darkBg via-transparent to-transparent"></div>
+                                <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                    <span class="px-2.5 py-1 rounded-md bg-ml-yellow text-ml-darkBlue font-bold text-xs">Deep Learning Core</span>
+                                    <span class="text-xs text-white bg-slate-900/90 px-2.5 py-1 rounded font-mono">Status: Online</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2.5 font-mono text-xs">
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Algoritmo de Recomendação:</span>
+                                    <span class="text-ml-yellow">Collaborative Filtering</span>
+                                </div>
+                                <div class="flex justify-between text-slate-300">
+                                    <span>Segurança Mercado Pago:</span>
+                                    <span class="text-emerald-400">XGBoost & Graph AI</span>
+                                </div>
+                                <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                    <div id="hero-progress-bar" class="bg-gradient-to-r from-ml-yellow to-blue-500 h-2 rounded-full w-0 transition-all duration-1000"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Badge -->
+                        <div class="absolute -bottom-6 -left-6 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-2xl flex items-center space-x-3 z-20">
+                            <div class="w-10 h-10 rounded-lg bg-ml-yellow/20 text-ml-yellow flex items-center justify-center font-bold text-lg">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-white">IA em Tempo Real</div>
+                                <div class="text-[10px] text-slate-400">Mais de 100M de acessos/dia</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- SECTION 2: O QUE É MACHINE LEARNING (FUNDAMENTOS) -->
+    <section id="fundamentos" class="py-20 border-b border-slate-800 bg-slate-950/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4 reveal">
+                <span class="text-ml-yellow text-sm font-bold tracking-widest uppercase">Fundamentos Tecnológicos</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-extrabold text-white">O que é Machine Learning e como ele pensa</h2>
+                <p class="text-slate-400 text-base sm:text-lg">
+                    Em vez de programar regras rígidas e manuais para cada situação, os engenheiros alimentam os algoritmos com dados históricos massivos para que o sistema aprenda sozinho a reconhecer padrões.
+                </p>
+            </div>
+
+            <!-- Concept Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card 1 -->
+                <div class="glass-card p-6 rounded-2xl hover:border-ml-yellow/50 transition-all duration-300 space-y-4 reveal">
+                    <div class="w-12 h-12 rounded-xl bg-ml-yellow/10 text-ml-yellow flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white">Aprendizado Contínuo</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Cada compra, clique e busca realizada na plataforma alimenta o modelo, tornando as previsões seguintes ainda mais inteligentes e precisas.
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="glass-card p-6 rounded-2xl hover:border-blue-500/50 transition-all duration-300 space-y-4 reveal">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white">Visão Computacional (VLM)</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Modelos multimodais que analisam fotos de produtos enviadas por vendedores, verificando autenticidade, qualidade e categoria automaticamente.
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="glass-card p-6 rounded-2xl hover:border-purple-500/50 transition-all duration-300 space-y-4 reveal">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white">Agentes Inteligentes</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Sistemas autônomos capazes de mediar conversas de suporte entre compradores e vendedores, resolvendo problemas de entrega sem intervenção humana.
+                    </p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-card p-6 rounded-2xl hover:border-emerald-500/50 transition-all duration-300 space-y-4 reveal">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="font-heading text-xl font-bold text-white">Redes Neurais de Grafos</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Mapeiam conexões complexas entre contas, dispositivos e endereços para identificar redes de fraude em milissegundos.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: CASOS DE USO NO MERCADO LIVRE -->
+    <section id="ecossistema" class="py-20 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4 reveal">
+                <span class="text-ml-yellow text-sm font-bold tracking-widest uppercase">Aplicações Práticas</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-extrabold text-white">Onde o Machine Learning atua no ecossistema</h2>
+                <p class="text-slate-400 text-base sm:text-lg">
+                    Conheça os três pilares que transformam dados em experiência fluida para milhões de usuários.
+                </p>
+            </div>
+
+            <div class="space-y-16">
+                <!-- Case 1 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center reveal">
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-yellow-500/10 text-ml-yellow border border-yellow-500/20 text-xs font-bold">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span>Marketplace Intelligence</span>
+                        </div>
+                        <h3 class="font-heading text-2xl sm:text-3xl font-bold text-white">1. Motores de Busca e Recomendação Personalizada</h3>
+                        <p class="text-slate-300 text-base leading-relaxed">
+                            Quando você digita um termo na barra de pesquisa, algoritmos de recomendação cruzam seu histórico de navegação, categorias favoritas e o comportamento de milhões de compradores similares em frações de segundo.
+                        </p>
+                        <ul class="space-y-3 text-slate-400 text-sm">
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-ml-yellow mt-1"></i>
+                                <span><strong>Filtro de Relevância:</strong> Separa os melhores anúncios entre mais de 300 milhões de itens cadastrados.</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-ml-yellow mt-1"></i>
+                                <span><strong>Previsão de Interesse:</strong> Sugere acessórios e complementos com alta taxa de afinidade.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 group">
+                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80" alt="Data Analytics" class="w-full h-80 object-cover transform group-hover:scale-105 transition-all duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-ml-darkBg via-ml-darkBg/30 to-transparent"></div>
+                            <div class="absolute bottom-6 left-6 right-6 p-4 glass-card rounded-xl">
+                                <div class="text-xs font-semibold text-ml-yellow mb-1"><i class="fa-solid fa-chart-line mr-1"></i>Busca Otimizada por IA</div>
+                                <div class="text-sm font-medium text-white">Resultados altamente personalizados em menos de 50 milissegundos.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center reveal">
+                    <div class="lg:col-span-6 lg:order-2 space-y-6">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-bold">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Mercado Pago Fintech</span>
+                        </div>
+                        <h3 class="font-heading text-2xl sm:text-3xl font-bold text-white">2. Prevenção a Fraudes e Análise de Crédito</h3>
+                        <p class="text-slate-300 text-base leading-relaxed">
+                            No Mercado Pago, modelos preditivos avaliam transações financeiras em tempo real. Cada pagamento via Pix ou cartão passa por um crivo de segurança que analisa geolocalização, padrão de digitação e histórico do dispositivo.
+                        </p>
+                        <ul class="space-y-3 text-slate-400 text-sm">
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-blue-400 mt-1"></i>
+                                <span><strong>Score Instantâneo:</strong> Classifica o risco de inadimplência ou fraude em tempo recorde.</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-blue-400 mt-1"></i>
+                                <span><strong>Proteção Ativa:</strong> Bloqueia tentativas suspeitas sem atrapalhar as compras legítimas.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-6 lg:order-1">
+                        <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 group">
+                            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80" alt="Cyber Security" class="w-full h-80 object-cover transform group-hover:scale-105 transition-all duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-ml-darkBg via-ml-darkBg/30 to-transparent"></div>
+                            <div class="absolute bottom-6 left-6 right-6 p-4 glass-card rounded-xl">
+                                <div class="text-xs font-semibold text-emerald-400 mb-1"><i class="fa-solid fa-shield-check mr-1"></i>Segurança Máxima</div>
+                                <div class="text-sm font-medium text-white">Milhões de transações monitoradas com precisão antifraude superior a 99%.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center reveal">
+                    <div class="lg:col-span-6 space-y-6">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold">
+                            <i class="fa-solid fa-truck-fast"></i>
+                            <span>Mercado Envios</span>
+                        </div>
+                        <h3 class="font-heading text-2xl sm:text-3xl font-bold text-white">3. Logística Preditiva e Roteirização de Entregas</h3>
+                        <p class="text-slate-300 text-base leading-relaxed">
+                            Para garantir entregas rápidas em todo o país, o Machine Learning prevê a demanda de produtos em cada região antes mesmo da compra, otimizando estoques e calculando as rotas mais eficientes para as frotas.
+                        </p>
+                        <ul class="space-y-3 text-slate-400 text-sm">
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-purple-400 mt-1"></i>
+                                <span><strong>Previsão de Demanda:</strong> Antecipa quais itens serão mais vendidos em épocas festivas.</span>
+                            </li>
+                            <li class="flex items-start space-x-3">
+                                <i class="fa-solid fa-circle-check text-purple-400 mt-1"></i>
+                                <span><strong>Roteirização Inteligente:</strong> Reduz o tempo de trânsito e o consumo de combustível das entregas.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="lg:col-span-6">
+                        <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 group">
+                            <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80" alt="Logistics Warehouse" class="w-full h-80 object-cover transform group-hover:scale-105 transition-all duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-ml-darkBg via-ml-darkBg/30 to-transparent"></div>
+                            <div class="absolute bottom-6 left-6 right-6 p-4 glass-card rounded-xl">
+                                <div class="text-xs font-semibold text-purple-400 mb-1"><i class="fa-solid fa-boxes-packing mr-1"></i>Logística Inteligente</div>
+                                <div class="text-sm font-medium text-white">Centros de distribuição automatizados com máxima eficiência operacional.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: SIMULADORES INTERATIVOS (JS ANIMATIONS & LOGIC) -->
+    <section id="simuladores" class="py-20 bg-slate-950 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4 reveal">
+                <span class="text-ml-yellow text-sm font-bold tracking-widest uppercase">Laboratório Prático</span>
+                <h2 class="font-heading text-3xl sm:text-4xl font-extrabold text-white">Simule os Algoritmos em Tempo Real</h2>
+                <p class="text-slate-400 text-base sm:text-lg">
+                    Teste interativamente como o sistema de recomendação e o motor antifraude processam variáveis dinâmicas.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- SIMULATOR 1: RECOMENDAÇÃO -->
+                <div class="glass-card rounded-2xl p-6 sm:p-8 space-y-6 flex flex-col justify-between border-ml-yellow/30 relative overflow-hidden reveal">
+                    <div class="absolute -top-16 -right-16 w-36 h-36 bg-ml-yellow/10 rounded-full blur-2xl"></div>
+
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-ml-yellow text-ml-darkBlue font-bold flex items-center justify-center">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-heading text-xl font-bold text-white">Simulador de Recomendação</h3>
+                                <p class="text-xs text-slate-400">Filtragem Colaborativa de Produtos</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-2">Perfil do Comprador:</label>
+                                <select id="rec-profile" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-ml-yellow focus:outline-none">
+                                    <option value="tech">Gamer & Hardware Enthusiast</option>
+                                    <option value="fashion">Moda & Tendências</option>
+                                    <option value="home">Casa Inteligente & Decoração</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-2">Ação Recente:</label>
+                                <select id="rec-action" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-ml-yellow focus:outline-none">
+                                    <option value="search">Busca frequente na plataforma</option>
+                                    <option value="cart">Adicionou item ao carrinho</option>
+                                    <option value="buy">Comprei item similar recentemente</option>
+                                </select>
+                            </div>
+
+                            <button id="btn-run-rec" class="w-full py-3 bg-ml-yellow text-ml-darkBlue font-bold rounded-xl shadow-lg shadow-ml-yellow/10 hover:bg-yellow-400 transition-all transform active:scale-95">
+                                Executar Predição de ML
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-slate-800 pb-2">
+                            <span>Score de Afinidade:</span>
+                            <span id="rec-score-badge" class="text-ml-yellow font-bold">98% Match</span>
+                        </div>
+                        <div id="rec-result-container" class="space-y-2">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SIMULATOR 2: FRAUDE MERCADO PAGO -->
+                <div class="glass-card rounded-2xl p-6 sm:p-8 space-y-6 flex flex-col justify-between border-blue-500/30 relative overflow-hidden reveal">
+                    <div class="absolute -top-16 -right-16 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl"></div>
+
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500 text-white font-bold flex items-center justify-center">
+                                <i class="fa-solid fa-shield-heart"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-heading text-xl font-bold text-white">Análise Antifraude Mercado Pago</h3>
+                                <p class="text-xs text-slate-400">Classificação de Risco de Transação</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+                                    <span>Valor da Transação (R$):</span>
+                                    <span id="val-amount-display" class="text-ml-yellow">R$ 450,00</span>
+                                </div>
+                                <input type="range" id="input-amount" min="10" max="15000" step="50" value="450" class="w-full accent-ml-yellow cursor-pointer">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Dispositivo:</label>
+                                    <select id="input-device" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                                        <option value="known">Habitual (Conhecido)</option>
+                                        <option value="new">Novo Dispositivo (Desconhecido)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Horário:</label>
+                                    <select id="input-time" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                                        <option value="day">Comercial (08h - 20h)</option>
+                                        <option value="night">Madrugada (02h - 05h)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">Localização IP:</label>
+                                <select id="input-location" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                                    <option value="same">Mesma Cidade Habitual</option>
+                                    <option value="distant">Local Incomum / Exterior</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-400 font-mono">Risk Score Calculado:</span>
+                            <span id="risk-score-value" class="font-mono text-lg font-extrabold text-emerald-400">12 / 100</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div id="risk-score-bar" class="bg-emerald-400 h-full w-[12%] transition-all duration-500"></div>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span id="fraud-status-badge" class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-check"></i> Aprovado Instantaneamente
+                            </span>
+                            <span id="fraud-latency" class="text-[10px] text-slate-500 font-mono">Latência: 28ms</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: IMPACTO GLOBAL -->
+    <section id="impacto" class="py-20 border-b border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 reveal">
+            <span class="text-ml-yellow text-sm font-bold tracking-widest uppercase">Evolução Tecnológica</span>
+            <h2 class="font-heading text-3xl sm:text-4xl font-extrabold text-white">O Futuro Inteligente do E-commerce</h2>
+
+            <div class="glass-card p-8 rounded-2xl text-left space-y-6 text-slate-300 leading-relaxed shadow-xl">
+                <p>
+                    O uso de <strong class="text-white">Machine Learning</strong> no Mercado Livre demonstra como a inteligência artificial deixou de ser um recurso isolado para se tornar a espinha dorsal de todo o ecossistema digital.
+                </p>
+                <p>
+                    Da busca instantânea de produtos à segurança absoluta no Mercado Pago e à precisão cirúrgica na logística, os modelos preditivos garantem agilidade, escalabilidade e uma experiência incomparável para milhões de pessoas todos os dias.
+                </p>
+                <div class="p-4 bg-slate-900/80 rounded-xl border-l-4 border-ml-yellow text-sm text-slate-200 italic">
+                    "A tecnologia mais avançada é aquela que se integra perfeitamente ao dia a dia, tornando as decisões complexas simples, rápidas e seguras."
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="py-10 bg-ml-darkBg text-center text-xs text-slate-500 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-ml-yellow flex items-center justify-center text-ml-darkBlue font-black text-sm">
+                    <i class="fa-solid fa-handshake-angle"></i>
+                </div>
+                <span class="font-heading font-bold text-white text-sm">Mercado Livre Tech</span>
+            </div>
+            <p>Desenvolvido por Franklin Pereira.</p>
+            <p class="text-slate-600">&copy; 2026 — Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT ANIMATIONS & LOGIC -->
+    <script>
+        // --- 1. Reading Progress Bar ---
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progress-bar').style.width = scrolled + '%';
+        });
+
+        // --- 2. Mobile Menu Toggle ---
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // --- 3. Scroll Reveal Animation using Intersection Observer ---
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        // --- 4. Animated Counters on Load ---
+        function animateCounter(id, start, end, duration, suffix = '') {
+            let obj = document.getElementById(id);
+            let startTime = null;
+            function animation(currentTime) {
+                if (!startTime) startTime = currentTime;
+                let progress = Math.min((currentTime - startTime) / duration, 1);
+                let currentVal = Math.floor(progress * (end - start) + start);
+                obj.innerHTML = currentVal.toLocaleString() + suffix;
+                if (progress < 1) {
+                    requestAnimationFrame(animation);
+                }
+            }
+            requestAnimationFrame(animation);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            animateCounter('counter-1', 0, 45000, 2000, '+');
+            animateCounter('counter-2', 0, 42, 1500, 'ms');
+            animateCounter('counter-3', 0, 500, 1800, '+');
+            
+            // Hero progress bar fill animation
+            setTimeout(() => {
+                document.getElementById('hero-progress-bar').style.width = '94%';
+            }, 300);
+
+            // Run initial recommendation simulation
+            runRecommendation();
+        });
+
+        // --- 5. Simulator 1: Recommendation Engine Logic ---
+        const profileSelect = document.getElementById('rec-profile');
+        const actionSelect = document.getElementById('rec-action');
+        const btnRunRec = document.getElementById('btn-run-rec');
+        const recResultContainer = document.getElementById('rec-result-container');
+        const recScoreBadge = document.getElementById('rec-score-badge');
+
+        const recommendationDatabase = {
+            tech: [
+                { title: 'Monitor Gamer Ultrawide 144Hz', category: 'Periféricos', match: 98, price: 'R$ 1.499' },
+                { title: 'Teclado Mecânico RGB Switch Blue', category: 'Acessórios', match: 93, price: 'R$ 329' },
+                { title: 'Mousepad Gamer XL Antiderrapante', category: 'Acessórios', match: 84, price: 'R$ 79' }
+            ],
+            fashion: [
+                { title: 'Tênis Esportivo Casual Slip-On', category: 'Calçados', match: 96, price: 'R$ 189' },
+                { title: 'Jaqueta Puffer Térmica Impermeável', category: 'Vestuário', match: 92, price: 'R$ 259' },
+                { title: 'Mochila Executiva Impermeável USB', category: 'Acessórios', match: 81, price: 'R$ 149' }
+            ],
+            home: [
+                { title: 'Lâmpada Inteligente Wi-Fi RGB', category: 'Casa Conectada', match: 97, price: 'R$ 55' },
+                { title: 'Robô Aspirador Inteligente Bivolt', category: 'Eletrodomésticos', match: 94, price: 'R$ 899' },
+                { title: 'Fita LED Smart Wi-Fi 5 Metros', category: 'Iluminação', match: 88, price: 'R$ 89' }
+            ]
+        };
+
+        function runRecommendation() {
+            const profile = profileSelect.value;
+            const items = recommendationDatabase[profile];
+            const actionBoost = actionSelect.value === 'cart' ? 2 : (actionSelect.value === 'buy' ? 1 : 0);
+
+            recResultContainer.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const finalMatch = Math.min(100, item.match + actionBoost);
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex items-center justify-between p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/50 hover:border-ml-yellow/50 transition-all transform hover:scale-[1.01]';
+                itemEl.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-ml-yellow/20 text-ml-yellow font-bold text-xs flex items-center justify-center">
+                            #${index + 1}
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-white">${item.title}</div>
+                            <div class="text-[10px] text-slate-400">${item.category} • <span class="text-emerald-400 font-semibold">${item.price}</span></div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-mono font-extrabold ${finalMatch > 90 ? 'text-ml-yellow' : 'text-slate-400'}">${finalMatch}% Match</span>
+                    </div>
+                `;
+                recResultContainer.appendChild(itemEl);
+            });
+
+            recScoreBadge.innerText = `${items[0].match + actionBoost}% Top Match`;
+        }
+
+        btnRunRec.addEventListener('click', runRecommendation);
+        profileSelect.addEventListener('change', runRecommendation);
+        actionSelect.addEventListener('change', runRecommendation);
+
+        // --- 6. Simulator 2: Fraud Risk Calculator Logic ---
+        const inputAmount = document.getElementById('input-amount');
+        const valAmountDisplay = document.getElementById('val-amount-display');
+        const inputDevice = document.getElementById('input-device');
+        const inputTime = document.getElementById('input-time');
+        const inputLocation = document.getElementById('input-location');
+
+        const riskScoreValue = document.getElementById('risk-score-value');
+        const riskScoreBar = document.getElementById('risk-score-bar');
+        const fraudStatusBadge = document.getElementById('fraud-status-badge');
+        const fraudLatency = document.getElementById('fraud-latency');
+
+        function calculateFraudRisk() {
+            const amount = parseFloat(inputAmount.value);
+            valAmountDisplay.innerText = `R$ ${amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+            let riskScore = 0;
+            if (amount > 10000) riskScore += 45;
+            else if (amount > 3000) riskScore += 25;
+            else if (amount > 1000) riskScore += 12;
+            else riskScore += 5;
+
+            if (inputDevice.value === 'new') riskScore += 30;
+            if (inputTime.value === 'night') riskScore += 18;
+            if (inputLocation.value === 'distant') riskScore += 25;
+
+            riskScore = Math.min(99, Math.max(4, riskScore));
+
+            riskScoreValue.innerText = `${riskScore} / 100`;
+            riskScoreBar.style.width = `${riskScore}%`;
+
+            const latency = Math.floor(Math.random() * 20) + 18;
+            fraudLatency.innerText = `Latência: ${latency}ms`;
+
+            if (riskScore >= 65) {
+                riskScoreBar.className = 'bg-red-500 h-full transition-all duration-500';
+                riskScoreValue.className = 'font-mono text-lg font-extrabold text-red-500';
+                fraudStatusBadge.className = 'px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-bold flex items-center gap-1.5';
+                fraudStatusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Transação Bloqueada (Suspeita)';
+            } else if (riskScore >= 35) {
+                riskScoreBar.className = 'bg-yellow-500 h-full transition-all duration-500';
+                riskScoreValue.className = 'font-mono text-lg font-extrabold text-yellow-400';
+                fraudStatusBadge.className = 'px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold flex items-center gap-1.5';
+                fraudStatusBadge.innerHTML = '<i class="fa-solid fa-face-smile"></i> Requer Biometria 2FA';
+            } else {
+                riskScoreBar.className = 'bg-emerald-400 h-full transition-all duration-500';
+                riskScoreValue.className = 'font-mono text-lg font-extrabold text-emerald-400';
+                fraudStatusBadge.className = 'px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-1.5';
+                fraudStatusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Aprovado Instantaneamente';
+            }
+        }
+
+        inputAmount.addEventListener('input', calculateFraudRisk);
+        inputDevice.addEventListener('change', calculateFraudRisk);
+        inputTime.addEventListener('change', calculateFraudRisk);
+        inputLocation.addEventListener('change', calculateFraudRisk);
+
+        calculateFraudRisk();
+    </script>
+</body>
+</html>
